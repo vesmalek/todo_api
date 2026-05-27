@@ -65,4 +65,11 @@ async def update_todo(todo_id: int, todo: TodoUpdate):
 
     return result
 
+@app.delete("/todos/{todo_id}", status_code=204)
+async def delete_todo(todo_id: int):
+    todo = find_todo(todo_id)
+
+    if todo:
+        todos.remove(todo)
+
 
