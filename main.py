@@ -3,65 +3,75 @@ from fastapi import FastAPI, HTTPException
 
 app = FastAPI()
 
+todos = []
+next_id = 1
+
 class TodoCreate(BaseModel):
     title: str
     description: str | None = None
-    is_completed: bool = False
+    completed: bool = False
 
 class TodoUpdate(BaseModel):
     title: str
     description: str | None = None
-    is_completed: bool = False
-
-todos = []
-next_id = 1
+    completed: bool = False
 
 # Helper function for finding todo:
-def find_todo(todo_id: int) -> dict:
+def find_todo(todo_id: int) -> dict | None:
     for todo in todos:
         if todo["id"] == todo_id:
             return todo
         
-    raise HTTPException(status_code=404, detail="TODO not found!")
+    return None
 
 @app.get("/todos")
-async def get_todos(skip: int = 0, limit: int = 4, is_checked: bool | None = None):
-    if is_checked is not None:
-        return [todo for todo in todos if todo["is_completed"] == is_checked]
+async def get_todos(
+    skip: int = 0, 
+    limit: int = 4, 
+    checked: bool | None = None
+):
+    result = todos
     
-    return todos[skip: skip + limit]
+    if checked is not None:
+        return [todo for todo in result if todo["completed"] == checked]
+    
+    return result[skip: skip + limit]
+
 
 @app.get("/todos/{todo_id}")
 async def get_todo(todo_id: int):
     
     todo = find_todo(todo_id)
     
-    if todo:
-        return todo
+    if not todo:
+        raise HTTPException(status_code=404, detail="TODO not found!")
+    
+    return todo
 
 @app.post("/todos", status_code=201)
 async def create_todo(todo: TodoCreate):
     global next_id
-    id = next_id
-    next_id = next_id + 1
 
-    todo = {
-        "id": id,
+    new_todo = {
+        "id": next_id,
         **todo.model_dump()
     }
 
-    todos.append(todo)
+    todos.append(new_todo)
+    next_id += 1
 
-    return todo
+    return new_todo
 
 @app.put("/todos/{todo_id}")
 async def update_todo(todo_id: int, todo: TodoUpdate):
     result = find_todo(todo_id)
 
-    if result:
-        result["title"] = todo.title
-        result["description"] = todo.description
-        result["is_completed"] = todo.is_completed
+    if not result:
+        raise HTTPException(status_code=404, detail="TODO not found!")
+
+    result["title"] = todo.title
+    result["description"] = todo.description
+    result["completed"] = todo.completed
 
     return result
 
@@ -69,7 +79,9 @@ async def update_todo(todo_id: int, todo: TodoUpdate):
 async def delete_todo(todo_id: int):
     todo = find_todo(todo_id)
 
-    if todo:
-        todos.remove(todo)
+    if not todo:
+        raise HTTPException(status_code=404, detail="TODO not found!")    
+    
+    todos.remove(todo)
 
 
