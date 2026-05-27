@@ -12,7 +12,10 @@ todos = []
 next_id = 1
 
 @app.get("/todos")
-async def get_todos(skip: int = 0, limit: int = 2, is_checked: bool | None = None):
+async def get_todos(skip: int = 0, limit: int = 4, is_checked: bool | None = None):
+    if is_checked is not None:
+        return [todo for todo in todos if todo["is_completed"] == is_checked]
+    
     return todos[skip: skip + limit]
 
 @app.post("/todos", status_code=201)
