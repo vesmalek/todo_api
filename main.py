@@ -28,12 +28,12 @@ def find_todo(todo_id: int) -> dict | None:
 async def get_todos(
     skip: int = 0, 
     limit: int = 4, 
-    checked: bool | None = None
+    completed: bool | None = None
 ):
     result = todos
     
-    if checked is not None:
-        return [todo for todo in result if todo["completed"] == checked]
+    if completed is not None:
+        result = [todo for todo in result if todo["completed"] == completed]
     
     return result[skip: skip + limit]
 
